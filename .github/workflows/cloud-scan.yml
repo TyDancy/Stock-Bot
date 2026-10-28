@@ -1,0 +1,58 @@
+name: Cloud scan and publish iPhone dashboard
+on:
+  workflow_dispatch:
+  schedule:
+    # Scheduled scans during the broad U.S. regular-market window (UTC; daylight-saving changes shift the local hours).
+    - cron: "*/15 13-20 * * 1-5"
+    # A few off-hours runs to refresh news and the latest daily-bar-based screen.
+    - cron: "17 1,5,9 * * 1-5"
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: swingbot-cloud-scan
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run one cloud scan
+        run: python cloud_scan.py
+        env:
+          ACCOUNT_SIZE: "10000"
+          SWING_STATE_DIR: .swing_state
+      - name: Persist bot research state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .swing_state
+          if ! git diff --cached --quiet; then
+            git commit -m "Update swing bot research state [skip ci]"
+            git push
+          fi
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: scan
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
