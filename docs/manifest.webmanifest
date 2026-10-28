@@ -1,0 +1,17 @@
+{
+  "name": "Swing Bot Mobile",
+  "short_name": "Swing Bot",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#101827",
+  "description": "Cloud-scanned U.S. and Canadian swing-trading research dashboard",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

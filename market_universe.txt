@@ -1,0 +1,1 @@
+# Optional additional symbols for the early momentum scanner, one ticker per line.

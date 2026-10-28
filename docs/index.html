@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.png">
+<title>Swing Bot Mobile</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#111b2d;--line:#273449;--muted:#9ca9bc;--text:#edf2f8;--blue:#60a5fa;--red:#f87171;--green:#34d399;--gold:#fbbf24}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{position:sticky;top:0;z-index:5;background:#101827ee;backdrop-filter:blur(12px);padding:calc(12px + env(safe-area-inset-top)) 14px 12px;border-bottom:1px solid var(--line)}
+h1{font-size:21px;margin:0 0 5px}.sub{color:var(--muted);font-size:12px;line-height:1.5}
+main{padding:12px;max-width:900px;margin:auto}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+button,.tab,input,select{border:1px solid var(--line);background:#172338;color:var(--text);border-radius:10px;padding:10px;font:inherit}
+button{cursor:pointer}.primary{background:#1d4ed8;border-color:#2563eb}.tabs{display:flex;gap:7px;overflow:auto;margin:10px 0 14px}.tab{white-space:nowrap;padding:9px 12px}.tab.active{background:#1d4ed8;border-color:#3b82f6}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.stat,.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:10px;min-width:0}
+.stat b{display:block;font-size:19px}.stat span{font-size:11px;color:var(--muted)}
+.sectionhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:16px 0 8px}.sectionhead h2{font-size:16px;margin:0}
+.card{border-left:4px solid var(--blue)}.card.canada{border-left-color:var(--red)}.card h3{font-size:16px;margin:0}.cardhead{display:flex;justify-content:space-between;gap:10px;align-items:start}.price{font-size:18px;font-weight:750;white-space:nowrap}
+.badge{display:inline-block;border-radius:6px;padding:4px 7px;background:#243247;color:#dbeafe;font-size:11px;font-weight:700}.good{color:var(--green)}.bad{color:var(--red)}.muted{color:var(--muted)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.metric{font-size:12px;color:var(--muted)}.metric b{display:block;color:var(--text);font-size:14px;margin-top:3px}.why{font-size:12px;color:#cbd5e1;line-height:1.45;margin-top:8px}
+input,select{width:100%;min-width:0}label{font-size:12px;color:var(--muted);display:block;margin:8px 0 4px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.wide{grid-column:1/-1}
+.links{display:flex;flex-wrap:wrap;gap:8px}.links a{color:#bfdbfe;background:#172338;border:1px solid var(--line);padding:10px;border-radius:9px;text-decoration:none}
+.warning{border-color:#7c5a15;background:#2b2415;color:#fcd34d;padding:10px;border-radius:10px;font-size:12px;line-height:1.5}
+.empty{text-align:center;padding:25px;color:var(--muted)}.foot{font-size:11px;color:var(--muted);line-height:1.5;margin:18px 0}
+@media(min-width:650px){.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{margin:0}.stats{grid-template-columns:repeat(4,1fr)}}
+</style></head>
+<body>
+<header><h1>📈 Swing Bot</h1><div id="status" class="sub">Loading latest cloud scan…</div></header>
+<main>
+<div class="warning">Research and alerts only — no trades are placed. Market data may be delayed, incomplete or stale. Confirm executable prices and spreads with your broker before acting.</div>
+<div class="stats" style="margin-top:10px">
+<div class="stat"><span>U.S. setups</span><b id="usCount">—</b></div><div class="stat"><span>Canadian setups</span><b id="caCount">—</b></div><div class="stat"><span>Universe symbols</span><b id="uniCount">—</b></div>
+</div>
+<div class="tabs" role="tablist">
+<button class="tab active" data-tab="setups">Setups</button><button class="tab" data-tab="momentum">Momentum</button><button class="tab" data-tab="holdings">My Holdings</button><button class="tab" data-tab="news">News</button>
+</div>
+<section id="setups">
+<div class="sectionhead"><h2>Top U.S. setups</h2><span class="badge">5–10% plan</span></div><div id="usPicks" class="cards"></div>
+<div class="sectionhead"><h2>Top Canadian setups</h2><span class="badge">TSX / Venture</span></div><div id="caPicks" class="cards"></div>
+</section>
+<section id="momentum" hidden><div class="sectionhead"><h2>Early momentum & volume</h2><button id="refresh">Refresh</button></div><div id="momentumRows"></div><p class="sub">Discovery alerts are not automatic buy signals. A strong move can reverse quickly.</p></section>
+<section id="holdings" hidden>
+<div class="sectionhead"><h2>My Holdings</h2></div>
+<div class="panel"><p class="sub">Holdings are stored on this iPhone/browser. They are not sent to the cloud scanner, and no broker account is connected.</p>
+<form id="positionForm"><div class="formgrid">
+<div><label for="ticker">Ticker (e.g. CNQ.TO)</label><input id="ticker" required autocapitalize="characters" placeholder="CNQ.TO"></div>
+<div><label for="entry">Purchase price</label><input id="entry" required type="number" min="0.0001" step="any" placeholder="71.10"></div>
+<div><label for="shares">Shares</label><input id="shares" type="number" min="0" step="any" placeholder="80"></div>
+<div><label for="stop">Stop price (optional)</label><input id="stop" type="number" min="0" step="any" placeholder="e.g. 68.50"></div>
+<div class="wide"><button class="primary" type="submit">Add holding</button></div>
+</div></form></div>
+<div id="holdingRows"></div><div class="toolbar"><button id="exportHoldings">Export holdings backup</button><button id="clearHoldings">Clear all holdings</button></div>
+</section>
+<section id="news" hidden>
+<div class="sectionhead"><h2>News & research</h2></div><div class="links"><a href="news_watch.html">Open News Watch</a><a href="early_momentum.html">Full Momentum Scanner</a><a href="trade_screen.html">Full Trade Screen</a></div>
+<p class="sub" style="margin-top:12px">News watch uses public sources when available. Rumours and social chatter are unverified and can be misleading.</p>
+<div id="newsHighlights"></div>
+</section>
+<div class="foot">Strategy settings inherited from the supplied Swing Bot: target 1 +5%, target 2 +10%, five-day horizon, conservative stop filters (maximum 4% stop). This is a research tool, not financial advice. Cloud scans are scheduled, not guaranteed to run at exact intervals.</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let data={picks:[],universe:[],momentum:[]};
+const money=(n,market)=>n==null?'—':(market==='CANADA'?'C$':'$')+Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:4});
+const pct=n=>n==null?'—':(Number(n)>=0?'+':'')+Number(n).toFixed(2)+'%';
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function card(r){let market=r.market||'USA';return `<article class="card ${market==='CANADA'?'canada':''}"><div class="cardhead"><div><h3>${esc(r.ticker)}</h3><div class="sub">${market==='CANADA'?'🇨🇦 Canada':'🇺🇸 U.S.'} · Score ${r.score??'—'} · ${esc(r.status||'WATCH')}</div></div><div class="price">${money(r.price,market)}</div></div><div class="grid2"><div class="metric">Buy zone<b>${money(r.buy_low,market)} – ${money(r.buy_high,market)}</b></div><div class="metric">Stop<b class="bad">${money(r.stop,market)}</b></div><div class="metric">Target 1 (+5%)<b class="good">${money(r.target_1,market)}</b></div><div class="metric">Target 2 (+10%)<b class="good">${money(r.target_2,market)}</b></div><div class="metric">Momentum<b>${r.momentum==null?'—':Number(r.momentum).toFixed(0)+'/100'}</b></div><div class="metric">Rel. volume<b>${r.relative_volume==null?'—':Number(r.relative_volume).toFixed(2)+'×'}</b></div></div><div class="why">${esc(r.status_text||r.recommendation||'Review chart, spread, and latest quote before trading.')}</div>${(r.news||[]).map(n=>`<div class="why">📰 ${n.url?`<a style="color:#bfdbfe" href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a>`:esc(n.title)}</div>`).join('')}</article>`}
+function renderPicks(){let us=data.picks.filter(r=>r.market==='USA'),ca=data.picks.filter(r=>r.market==='CANADA');$('usCount').textContent=us.length;$('caCount').textContent=ca.length;$('uniCount').textContent=data.universe_count??data.universe.length;$('usPicks').innerHTML=us.length?us.map(card).join(''):'<div class="empty">No qualifying U.S. setups in the latest scan.</div>';$('caPicks').innerHTML=ca.length?ca.map(card).join(''):'<div class="empty">No qualifying Canadian setups in the latest scan.</div>'}
+function renderMomentum(){let rows=data.momentum||[];$('momentumRows').innerHTML=rows.length?rows.map(r=>`<article class="card ${String(r.market).toUpperCase().includes('CANADA')?'canada':''}"><div class="cardhead"><div><h3>${esc(r.ticker)}</h3><div class="sub">${esc(r.market)} · ${esc(r.level)}</div></div><div class="price">${money(r.price,String(r.market).toUpperCase().includes('CANADA')?'CANADA':'USA')}</div></div><div class="grid2"><div class="metric">Move<b class="${r.move_pct>=0?'good':'bad'}">${pct(r.move_pct)}</b></div><div class="metric">Same-time RVOL<b>${r.rvol==null?'—':Number(r.rvol).toFixed(2)+'×'}</b></div></div><div class="why">${esc(r.headline||'No matching headline')}</div></article>`).join(''):'<div class="empty">No qualifying intraday momentum results in the latest scan. The scanner runs during scheduled market-hour scans.</div>'}
+function loadPositions(){try{return JSON.parse(localStorage.getItem('swingbot.positions')||'[]')}catch{return []}}
+function savePositions(p){localStorage.setItem('swingbot.positions',JSON.stringify(p));renderHoldings()}
+function findQuote(t){let all=[...(data.universe||[]),...(data.picks||[])];return all.find(r=>String(r.ticker).toUpperCase()===t.toUpperCase())}
+function renderHoldings(){let ps=loadPositions();$('holdingRows').innerHTML=ps.length?ps.map((p,i)=>{let q=findQuote(p.ticker),price=q?.price,pl=price!=null&&p.entry>0?(price/p.entry-1)*100:null,qty=Number(p.shares||0),dollars=price!=null?(price-p.entry)*qty:null;let stop=p.stop?Number(p.stop):q?.stop;let warning=price!=null&&stop!=null&&price<=stop?'STOP LEVEL REACHED':price!=null&&pl>=5?'TARGET +5% REACHED':'Monitoring';return `<article class="card ${p.ticker.toUpperCase().endsWith('.TO')||p.ticker.toUpperCase().endsWith('.CN')||p.ticker.toUpperCase().endsWith('.V')?'canada':''}"><div class="cardhead"><div><h3>${esc(p.ticker)}</h3><div class="sub">${esc(warning)}</div></div><div class="price">${money(price,q?.market)}</div></div><div class="grid2"><div class="metric">Entry<b>${money(p.entry,q?.market)}</b></div><div class="metric">P/L<b class="${pl!=null&&pl>=0?'good':'bad'}">${pl==null?'—':pct(pl)} ${dollars==null?'':'('+money(dollars,q?.market)+')'}</b></div><div class="metric">Shares<b>${qty||'—'}</b></div><div class="metric">Stop<b>${money(stop,q?.market)}</b></div></div><div class="toolbar"><button onclick="removePosition(${i})">Remove</button></div><div class="sub">${q?'Price source: '+esc(q.price_source||'latest available bar'):'No quote in current scanned universe; add this ticker to watchlist.txt.'}</div></article>`}).join(''):'<div class="empty">No holdings yet. Add a position above.</div>'}
+window.removePosition=i=>{let p=loadPositions();p.splice(i,1);savePositions(p)};
+function renderNews(){let rows=(data.picks||[]).flatMap(r=>(r.news||[]).map(n=>({...n,ticker:r.ticker,market:r.market}))).slice(0,20);$('newsHighlights').innerHTML=rows.length?rows.map(n=>`<article class="card ${n.market==='CANADA'?'canada':''}"><h3>${esc(n.ticker)} · ${esc(n.direction||'NEWS')}${n.rumor?' · UNVERIFIED RUMOUR':''}</h3><div class="why">${n.url?`<a style="color:#bfdbfe" target="_blank" rel="noopener" href="${esc(n.url)}">${esc(n.title)}</a>`:esc(n.title)}</div></article>`).join(''):'<div class="empty">No headline highlights available in the latest scan. Open News Watch for the full feed.</div>'}
+async function refreshData(){try{let r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);data=await r.json();renderPicks();renderMomentum();renderHoldings();renderNews();let when=data.generated_at?new Date(data.generated_at).toLocaleString():'unknown';$('status').textContent=`Updated ${when} · ${data.market_open?'U.S. market open':'market closed / outside regular session'} · ${data.universe_count||0} symbols scanned`+(data.errors?.length?' · scan warning':'');if(data.errors?.length)$('status').textContent+=' — '+data.errors.join(' | '); }catch(e){$('status').textContent='Unable to load scan data: '+e.message+'. The cloud scan may not have completed yet.'}}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));['setups','momentum','holdings','news'].forEach(t=>$(t).hidden=t!==b.dataset.tab)}));
+$('positionForm').addEventListener('submit',e=>{e.preventDefault();let ticker=$('ticker').value.trim().toUpperCase(),entry=Number($('entry').value);if(!ticker||!(entry>0))return;let ps=loadPositions();ps.push({ticker,entry,shares:Number($('shares').value||0),stop:Number($('stop').value||0)||null,added_at:new Date().toISOString()});savePositions(ps);e.target.reset()});
+$('refresh').addEventListener('click',refreshData);$('exportHoldings').addEventListener('click',()=>{let blob=new Blob([JSON.stringify(loadPositions(),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='swingbot-holdings-backup.json';a.click();URL.revokeObjectURL(a.href)});
+$('clearHoldings').addEventListener('click',()=>{if(confirm('Delete all holdings saved in this browser?'))savePositions([])});
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+refreshData();setInterval(refreshData,60000);
+</script></body></html>

@@ -1,0 +1,17 @@
+{
+  "generated_at": null,
+  "market_open": false,
+  "universe_count": 0,
+  "picks": [],
+  "universe": [],
+  "momentum": [],
+  "errors": [
+    "Waiting for the first GitHub Actions scan."
+  ],
+  "strategy": {
+    "target_1_pct": 5,
+    "target_2_pct": 10,
+    "max_stop_pct": 4,
+    "horizon_days": 5
+  }
+}
